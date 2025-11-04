@@ -45,7 +45,7 @@ stages:
         cat > terraform/pipeline.auto.tfvars <<EOF
         application_name      = "DevOps1-pm"
         environment           = "dev"
-        location              = "West Europe"
+        location              = "North Europe"
 
         subscription_id       = "$(subscriptionId)"
         tenant_id             = "$(tenantId)"
