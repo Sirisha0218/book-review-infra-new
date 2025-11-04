@@ -13,7 +13,7 @@ stages:
   - job: Terraform_Apply
     displayName: 'Terraform Apply'
     pool:
-      name: 'linux-self-hosted-agent'
+      name: 'linux-hosted-agent-pool'
 
     steps:
     # Download the SSH public key you uploaded as a secure file
