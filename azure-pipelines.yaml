@@ -18,11 +18,13 @@ stages:
 - stage: AzureInfra
   displayName: 'Provision Azure Infrastructure'
   jobs:
-  - job: Terraform_Azure
-    displayName: 'Terraform Apply (Azure)'
+  # -------------------------
+  # Job 1: Terraform Init (Azure)
+  # -------------------------
+  - job: Terraform_Init_Azure
+    displayName: 'Terraform Init (Azure)'
     pool:
       name: 'linux-hosted-agent-pool'
-
     steps:
     - task: DownloadSecureFile@1
       name: download_ssh_key
@@ -47,7 +49,7 @@ stages:
         client_id             = "$(servicePrincipalId)"
         client_secret         = "$(servicePrincipalKey)"
 
-        vm_size               = "Standard_B1s"
+        vm_size               = "Standard_B1ms"
         admin_username        = "azureuser"
         admin_password        = "$(vmAdminPassword)"
 
@@ -76,6 +78,34 @@ stages:
         inlineScript: |
           terraform init -input=false
 
+  # -------------------------
+  # Job 2: Terraform Plan (Azure)
+  # -------------------------
+  - job: Terraform_Plan_Azure
+    displayName: 'Terraform Plan (Azure)'
+    dependsOn: Terraform_Init_Azure
+    pool:
+      name: 'linux-hosted-agent-pool'
+    steps:
+    - task: AzureCLI@2
+      displayName: "Terraform Plan (Azure)"
+      inputs:
+        azureSubscription: 'azure-connection'
+        scriptType: bash
+        scriptLocation: inlineScript
+        workingDirectory: $(System.DefaultWorkingDirectory)/terraform
+        inlineScript: |
+          terraform plan -input=false -var-file="pipeline.auto.tfvars"
+
+  # -------------------------
+  # Job 3: Terraform Apply (Azure)
+  # -------------------------
+  - job: Terraform_Apply_Azure
+    displayName: 'Terraform Apply (Azure)'
+    dependsOn: Terraform_Plan_Azure
+    pool:
+      name: 'linux-hosted-agent-pool'
+    steps:
     - task: AzureCLI@2
       displayName: "Terraform Apply (Azure)"
       inputs:
@@ -122,6 +152,15 @@ stages:
         terraform init -input=false
       workingDirectory: $(System.DefaultWorkingDirectory)/terraform
       displayName: "Terraform Init (AWS)"
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+        AWS_DEFAULT_REGION: $(AWS_DEFAULT_REGION)
+
+    - script: |
+        terraform plan -input=false -var-file="aws.auto.tfvars"
+      workingDirectory: $(System.DefaultWorkingDirectory)/terraform
+      displayName: "Terraform Plan (AWS)"
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
