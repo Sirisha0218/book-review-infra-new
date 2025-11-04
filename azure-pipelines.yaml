@@ -39,19 +39,27 @@ stages:
     - script: |
         echo "Generating pipeline.auto.tfvars with secrets and config"
         cat > terraform/pipeline.auto.tfvars <<EOF
+        application_name      = "DevOps1-pm"
+        environment           = "dev"
+        location              = "East US 2"
+
         subscription_id       = "$(subscriptionId)"
         tenant_id             = "$(tenantId)"
         client_id             = "$(servicePrincipalId)"
         client_secret         = "$(servicePrincipalKey)"
-        ssh_public_key        = file("modules/compute/id_rsa_azure.pub")
+
+        vm_size               = "Standard_B1s"
         admin_username        = "azureuser"
         admin_password        = "$(vmAdminPassword)"
+
         mysql_admin_username  = "mysqladmin"
         mysql_admin_password  = "$(mysqlAdminPassword)"
         mysql_database_name   = "bookreviews_dev"
-        vm_size               = "Standard_B1s"
+
+        ssh_public_key        = file("modules/compute/id_rsa_azure.pub")
         EOF
       displayName: 'Generate pipeline.auto.tfvars'
+
 
 
     - script: |
