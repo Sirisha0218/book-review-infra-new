@@ -59,7 +59,7 @@ stages:
         mysql_admin_password  = "$(mysqlAdminPassword)"
         mysql_database_name   = "bookreviews_dev"
 
-        ssh_public_key        = file("modules/compute/id_rsa_azure.pub")
+        ssh_public_key        = "$(sshPublicKey)"
         vnet_address_space             = ["10.0.0.0/16"]
         public_subnet_address_prefixes = ["10.0.1.0/24"]
 
