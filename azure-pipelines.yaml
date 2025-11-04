@@ -8,6 +8,7 @@ trigger:
 
 variables:
   - group: infra-secrets
+  - group: Terraform-Azure-Creds
 
 stages:
 - stage: Terraform
@@ -66,6 +67,10 @@ stages:
         EOF
       displayName: 'Generate pipeline.auto.tfvars'
 
+    - script: |
+        echo "Contents of pipeline.auto.tfvars:"
+        cat terraform/pipeline.auto.tfvars
+      displayName: "Debug tfvars"
 
 
     - script: |
