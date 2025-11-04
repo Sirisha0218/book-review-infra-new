@@ -23,7 +23,7 @@ resource "aws_security_group" "mysql_sg" {
     from_port   = 3306
     to_port     = 3306
     protocol    = "tcp"
-    cidr_blocks = [var.backend_vm_public_ip + "/32"]
+    cidr_blocks = ["${var.backend_vm_public_ip}/32"]
   }
 
   egress {
@@ -33,3 +33,4 @@ resource "aws_security_group" "mysql_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
+
