@@ -70,3 +70,6 @@ variable "ssh_public_key" {
   type        = string
 }
 
+variable "aws_region" {
+  default = "us-east-1" 
+}
