@@ -9,43 +9,38 @@ trigger:
 variables:
   - group: infra-secrets
   - group: Terraform-Azure-Creds
+  - group: Terraform-AWS-Creds   # <-- add AWS keys here
 
 stages:
-- stage: Terraform
-  displayName: 'Provision Infrastructure'
+# -------------------------
+# Stage 1: Azure Infra
+# -------------------------
+- stage: AzureInfra
+  displayName: 'Provision Azure Infrastructure'
   jobs:
-  - job: Terraform_Apply
-    displayName: 'Terraform Apply'
+  - job: Terraform_Azure
+    displayName: 'Terraform Apply (Azure)'
     pool:
       name: 'linux-hosted-agent-pool'
 
     steps:
-    # Download the SSH public key you uploaded as a secure file
     - task: DownloadSecureFile@1
       name: download_ssh_key
       inputs:
         secureFile: 'id_rsa_azure.pub'
 
     - script: |
-        echo "Copying SSH public key into Terraform module"
-
         mkdir -p ~/.ssh
         cp $(download_ssh_key.secureFilePath) ~/.ssh/id_rsa.pub
-
-        # Copy into Terraform module path so file() calls succeed
         cp $(download_ssh_key.secureFilePath) terraform/modules/compute/id_rsa_azure.pub
-
-        echo "Listing contents of terraform/modules/compute/"
-        ls -al terraform/modules/compute/
       displayName: 'Prepare SSH Public Key for Terraform'
 
-    # Generate pipeline.auto.tfvars from variable group values
     - script: |
-        echo "Generating pipeline.auto.tfvars with secrets and config"
+        echo "Generating pipeline.auto.tfvars for Azure"
         cat > terraform/pipeline.auto.tfvars <<EOF
         application_name      = "DevOps1-pm"
         environment           = "dev"
-        location              = "Central India"
+        location              = "East US"
 
         subscription_id       = "$(subscriptionId)"
         tenant_id             = "$(tenantId)"
@@ -56,22 +51,11 @@ stages:
         admin_username        = "azureuser"
         admin_password        = "$(vmAdminPassword)"
 
-        mysql_admin_username  = "mysqladmin"
-        mysql_admin_password  = "$(mysqlAdminPassword)"
-        mysql_database_name   = "bookreviews_dev"
-
         ssh_public_key        = "$(sshPublicKey)"
         vnet_address_space             = ["10.0.0.0/16"]
         public_subnet_address_prefixes = ["10.0.1.0/24"]
-
         EOF
       displayName: 'Generate pipeline.auto.tfvars'
-
-    - script: |
-        echo "Contents of pipeline.auto.tfvars:"
-        cat terraform/pipeline.auto.tfvars
-      displayName: "Debug tfvars"
-
 
     - script: |
         sudo apt-get update -y
@@ -82,10 +66,8 @@ stages:
         terraform -version
       displayName: "Install Terraform"
 
-
-    # Run Terraform with Azure CLI context
     - task: AzureCLI@2
-      displayName: "Terraform Init"
+      displayName: "Terraform Init (Azure)"
       inputs:
         azureSubscription: 'azure-connection'
         scriptType: bash
@@ -95,17 +77,7 @@ stages:
           terraform init -input=false
 
     - task: AzureCLI@2
-      displayName: "Terraform Plan"
-      inputs:
-        azureSubscription: 'azure-connection'
-        scriptType: bash
-        scriptLocation: inlineScript
-        workingDirectory: $(System.DefaultWorkingDirectory)/terraform
-        inlineScript: |
-          terraform plan -input=false -var-file="pipeline.auto.tfvars"
-
-    - task: AzureCLI@2
-      displayName: "Terraform Apply"
+      displayName: "Terraform Apply (Azure)"
       inputs:
         azureSubscription: 'azure-connection'
         scriptType: bash
@@ -114,3 +86,50 @@ stages:
         inlineScript: |
           terraform apply -input=false -auto-approve -var-file="pipeline.auto.tfvars"
 
+    # Publish backend VM IP as pipeline artifact for Stage 2
+    - script: |
+        terraform output -raw backend_public_ip > backend_ip.txt
+    - publish: backend_ip.txt
+      artifact: azure-outputs
+
+# -------------------------
+# Stage 2: AWS DB
+# -------------------------
+- stage: AWSDB
+  displayName: 'Provision AWS RDS MySQL'
+  dependsOn: AzureInfra
+  jobs:
+  - job: Terraform_AWS
+    displayName: 'Terraform Apply (AWS)'
+    pool:
+      name: 'linux-hosted-agent-pool'
+
+    steps:
+    - download: current
+      artifact: azure-outputs
+
+    - script: |
+        BACKEND_IP=$(cat $(Pipeline.Workspace)/azure-outputs/backend_ip.txt)
+        echo "backend_vm_public_ip = \"${BACKEND_IP}\"" > terraform/aws.auto.tfvars
+        echo "mysql_admin_username = \"mysqladmin\"" >> terraform/aws.auto.tfvars
+        echo "mysql_admin_password = \"$(mysqlAdminPassword)\"" >> terraform/aws.auto.tfvars
+        echo "mysql_database_name  = \"bookreviews_dev\"" >> terraform/aws.auto.tfvars
+      displayName: "Generate aws.auto.tfvars"
+
+    - script: |
+        terraform init -input=false
+      workingDirectory: $(System.DefaultWorkingDirectory)/terraform
+      displayName: "Terraform Init (AWS)"
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+        AWS_DEFAULT_REGION: $(AWS_DEFAULT_REGION)
+
+    - script: |
+        terraform apply -input=false -auto-approve -var-file="aws.auto.tfvars"
+      workingDirectory: $(System.DefaultWorkingDirectory)/terraform
+      displayName: "Terraform Apply (AWS)"
+      env:
+        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
+        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
+        AWS_DEFAULT_REGION: $(AWS_DEFAULT_REGION)
