@@ -44,10 +44,15 @@ stages:
         client_id             = "$(servicePrincipalId)"
         client_secret         = "$(servicePrincipalKey)"
         ssh_public_key        = file("modules/compute/id_rsa_azure.pub")
+        admin_username        = "azureuser"
         admin_password        = "$(vmAdminPassword)"
+        mysql_admin_username  = "mysqladmin"
         mysql_admin_password  = "$(mysqlAdminPassword)"
+        mysql_database_name   = "bookreviews_dev"
+        vm_size               = "Standard_B1s"
         EOF
       displayName: 'Generate pipeline.auto.tfvars'
+
 
     - script: |
         sudo apt-get update -y
