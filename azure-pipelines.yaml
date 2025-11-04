@@ -119,6 +119,19 @@ stages:
       displayName: "Generate aws.auto.tfvars"
 
     - script: |
+        echo "DEBUG: Checking database variables being passed to Terraform"
+        echo "mysql_admin_username = $(grep 'mysql_admin_username' terraform/aws.auto.tfvars)"
+        echo "mysql_database_name  = $(grep 'mysql_database_name' terraform/aws.auto.tfvars)"
+        # Mask the password so it doesn't leak in logs
+        if grep -q 'mysql_admin_password' terraform/aws.auto.tfvars; then
+          echo "mysql_admin_password is set (value hidden)"
+        else
+          echo "mysql_admin_password is NOT set!"
+        fi
+      displayName: "Echo DB variables for debug"
+
+
+    - script: |
         terraform init -input=false
       workingDirectory: $(System.DefaultWorkingDirectory)/terraform
       displayName: "Terraform Init (AWS)"
