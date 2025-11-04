@@ -6,6 +6,9 @@ trigger:
     include:
       - main
 
+variables:
+  - group: infra-secrets
+
 stages:
 - stage: Terraform
   displayName: 'Provision Infrastructure'
@@ -57,6 +60,9 @@ stages:
         mysql_database_name   = "bookreviews_dev"
 
         ssh_public_key        = file("modules/compute/id_rsa_azure.pub")
+        vnet_address_space             = ["10.0.0.0/16"]
+        public_subnet_address_prefixes = ["10.0.1.0/24"]
+
         EOF
       displayName: 'Generate pipeline.auto.tfvars'
 
