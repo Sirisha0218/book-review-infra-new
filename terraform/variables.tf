@@ -58,3 +58,25 @@ variable "ssh_public_key" {
 variable "aws_region" {
   default = "us-east-1" 
 }
+
+variable "mysql_admin_username" {
+  description = "Username for MySQL admin"
+  type        = string
+}
+
+variable "mysql_admin_password" {
+  description = "Password for MySQL admin"
+  type        = string
+  sensitive   = true
+}
+
+variable "mysql_database_name" {
+  description = "Database name for Book Review App"
+  type        = string
+}
+
+variable "backend_vm_public_ip" {
+  description = "Public IP of the Azure backend VM"
+  type        = string
+}
+
