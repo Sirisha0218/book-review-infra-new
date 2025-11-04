@@ -58,3 +58,9 @@ variable "ssh_public_key" {
 variable "aws_region" {
   default = "us-east-1" 
 }
+
+variable "backend_vm_public_ip" {
+  description = "Public IP of the Azure backend VM"
+  type        = string
+}
+
