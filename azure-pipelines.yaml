@@ -110,46 +110,15 @@ stages:
 
     - script: |
         BACKEND_IP=$(cat $(Pipeline.Workspace)/azure-outputs/backend_ip.txt)
-        cat > terraform/aws.auto.tfvars <<EOF
-        backend_vm_public_ip = "${BACKEND_IP}"
-        mysql_admin_username = "mysqladmin"
-        mysql_admin_password = "SuperSecret123!"   # hard‑coded for testing
-        mysql_database_name  = "bookreviews_dev"
-        EOF
-      displayName: "Generate aws.auto.tfvars"
-
-    - script: |
-        echo "DEBUG: Checking database variables being passed to Terraform"
-        echo "mysql_admin_username = $(grep 'mysql_admin_username' terraform/aws.auto.tfvars)"
-        echo "mysql_database_name  = $(grep 'mysql_database_name' terraform/aws.auto.tfvars)"
-        # Mask the password so it doesn't leak in logs
-        if grep -q 'mysql_admin_password' terraform/aws.auto.tfvars; then
-          echo "mysql_admin_password is set (value hidden)"
-        else
-          echo "mysql_admin_password is NOT set!"
-        fi
-      displayName: "Echo DB variables for debug"
-
-    - script: |
-        echo "Listing terraform directory:"
-        ls -al $(System.DefaultWorkingDirectory)/terraform
-        echo "Contents of aws.auto.tfvars:"
-        cat $(System.DefaultWorkingDirectory)/terraform/aws.auto.tfvars
-      displayName: "Debug tfvars"
-
-    - script: |
+        echo "Using backend IP: $BACKEND_IP"
         terraform init -input=false
+        terraform apply -input=false -auto-approve \
+          -var "backend_vm_public_ip=$BACKEND_IP" \
+          -var "mysql_admin_username=mysqladmin" \
+          -var "mysql_admin_password=SuperSecret123!" \
+          -var "mysql_database_name=bookreviews_dev"
       workingDirectory: $(System.DefaultWorkingDirectory)/terraform
-      displayName: "Terraform Init (AWS)"
-      env:
-        AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
-        AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
-        AWS_DEFAULT_REGION: $(AWS_DEFAULT_REGION)
-
-    - script: |
-        terraform apply -input=false -auto-approve -var-file="aws.auto.tfvars"
-      workingDirectory: $(System.DefaultWorkingDirectory)/terraform
-      displayName: "Terraform Apply (AWS)"
+      displayName: "Terraform Init & Apply (AWS)"
       env:
         AWS_ACCESS_KEY_ID: $(AWS_ACCESS_KEY_ID)
         AWS_SECRET_ACCESS_KEY: $(AWS_SECRET_ACCESS_KEY)
