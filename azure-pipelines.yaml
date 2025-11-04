@@ -40,7 +40,7 @@ stages:
         cat > terraform/pipeline.auto.tfvars <<EOF
         application_name      = "DevOps1-pm"
         environment           = "dev"
-        location              = "East US"
+        location              = "North Europe"
 
         subscription_id       = "$(subscriptionId)"
         tenant_id             = "$(tenantId)"
@@ -110,10 +110,12 @@ stages:
 
     - script: |
         BACKEND_IP=$(cat $(Pipeline.Workspace)/azure-outputs/backend_ip.txt)
-        echo "backend_vm_public_ip = \"${BACKEND_IP}\"" > terraform/aws.auto.tfvars
-        echo "mysql_admin_username = \"mysqladmin\"" >> terraform/aws.auto.tfvars
-        echo "mysql_admin_password = \"$(mysqlAdminPassword)\"" >> terraform/aws.auto.tfvars
-        echo "mysql_database_name  = \"bookreviews_dev\"" >> terraform/aws.auto.tfvars
+        cat > terraform/aws.auto.tfvars <<EOF
+        backend_vm_public_ip = "${BACKEND_IP}"
+        mysql_admin_username = "mysqladmin"
+        mysql_admin_password = "$(mysqlAdminPassword)"
+        mysql_database_name  = "bookreviews_dev"
+        EOF
       displayName: "Generate aws.auto.tfvars"
 
     - script: |
