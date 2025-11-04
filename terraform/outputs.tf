@@ -14,6 +14,7 @@ output "nsg_id" {
   value = module.network.nsg_id
 }
 
-output "mysql_fqdn" {
-  value = module.database.mysql_fqdn
+# Updated for AWS RDS
+output "mysql_endpoint" {
+  value = module.database.mysql_endpoint
 }
