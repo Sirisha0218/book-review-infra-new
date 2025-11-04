@@ -78,6 +78,10 @@ stages:
         inlineScript: |
           terraform init -input=false
 
+    # Publish tfvars as artifact for later jobs
+    - publish: terraform/pipeline.auto.tfvars
+      artifact: azure-tfvars
+
   # -------------------------
   # Job 2: Terraform Plan (Azure)
   # -------------------------
@@ -87,6 +91,13 @@ stages:
     pool:
       name: 'linux-hosted-agent-pool'
     steps:
+    - download: current
+      artifact: azure-tfvars
+
+    - script: |
+        cp $(Pipeline.Workspace)/azure-tfvars/pipeline.auto.tfvars terraform/pipeline.auto.tfvars
+      displayName: "Retrieve pipeline.auto.tfvars"
+
     - task: AzureCLI@2
       displayName: "Terraform Plan (Azure)"
       inputs:
@@ -106,6 +117,13 @@ stages:
     pool:
       name: 'linux-hosted-agent-pool'
     steps:
+    - download: current
+      artifact: azure-tfvars
+
+    - script: |
+        cp $(Pipeline.Workspace)/azure-tfvars/pipeline.auto.tfvars terraform/pipeline.auto.tfvars
+      displayName: "Retrieve pipeline.auto.tfvars"
+
     - task: AzureCLI@2
       displayName: "Terraform Apply (Azure)"
       inputs:
