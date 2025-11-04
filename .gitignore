@@ -34,3 +34,5 @@ terraform.tfvars
 # === Ansible Code ===
 ansible/
 
+terraform.tfvars
+*.auto.tfvars
