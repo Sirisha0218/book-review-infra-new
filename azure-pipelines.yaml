@@ -130,6 +130,12 @@ stages:
         fi
       displayName: "Echo DB variables for debug"
 
+    - script: |
+        echo "Listing terraform directory:"
+        ls -al $(System.DefaultWorkingDirectory)/terraform
+        echo "Contents of aws.auto.tfvars:"
+        cat $(System.DefaultWorkingDirectory)/terraform/aws.auto.tfvars
+      displayName: "Debug tfvars"
 
     - script: |
         terraform init -input=false
