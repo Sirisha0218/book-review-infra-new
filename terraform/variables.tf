@@ -49,22 +49,6 @@ variable "vm_size" {
   type = string
 }
 
-variable "mysql_admin_username" {
-  description = "Username for MySQL Flexible Server admin"
-  type        = string
-}
-
-variable "mysql_admin_password" {
-  description = "Password for MySQL Flexible Server admin"
-  type        = string
-  sensitive   = true
-}
-
-variable "mysql_database_name" {
-  description = "Database name for Book Review App"
-  type        = string
-}
-
 
 variable "ssh_public_key" {
   description = "The actual SSH public key string"
