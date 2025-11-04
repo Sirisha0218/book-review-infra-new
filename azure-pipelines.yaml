@@ -113,7 +113,7 @@ stages:
         cat > terraform/aws.auto.tfvars <<EOF
         backend_vm_public_ip = "${BACKEND_IP}"
         mysql_admin_username = "mysqladmin"
-        mysql_admin_password = "$(mysqlAdminPassword)"
+        mysql_admin_password = "SuperSecret123!"   # hard‑coded for testing
         mysql_database_name  = "bookreviews_dev"
         EOF
       displayName: "Generate aws.auto.tfvars"
